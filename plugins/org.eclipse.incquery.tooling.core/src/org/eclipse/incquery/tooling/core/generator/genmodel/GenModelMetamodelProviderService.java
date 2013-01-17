@@ -31,8 +31,8 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.eclipse.incquery.patternlanguage.emf.scoping.MetamodelProviderService;
 import org.eclipse.incquery.tooling.core.project.IncQueryNature;
+import org.eclipse.incquery.tooling.core.targetPlatform.TargetPlatformMetamodelProviderService;
 import org.eclipse.incquery.tooling.generator.model.generatorModel.GeneratorModelFactory;
 import org.eclipse.incquery.tooling.generator.model.generatorModel.GeneratorModelReference;
 import org.eclipse.incquery.tooling.generator.model.generatorModel.IncQueryGeneratorModel;
@@ -55,7 +55,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
-public class GenModelMetamodelProviderService extends MetamodelProviderService implements IEiqGenmodelProvider {
+public class GenModelMetamodelProviderService extends TargetPlatformMetamodelProviderService implements IEiqGenmodelProvider {
 
     private static final class NameTransformerFunction implements Function<IEObjectDescription, QualifiedName> {
         @Override
@@ -235,9 +235,18 @@ public class GenModelMetamodelProviderService extends MetamodelProviderService i
     }
 
     @Override
-    public GenPackage findGenPackage(ResourceSet set, final String packageNsUri) {
+    public GenPackage findGenPackage(ResourceSet set, final String packageNsUri) {   	
         IncQueryGeneratorModel eiqGenModel = getGeneratorModel(set);
-        return findGenPackage(eiqGenModel, set, packageNsUri, true);
+        
+        GenPackage genPackage = findGenPackage(eiqGenModel, set, packageNsUri, true);
+        
+        /* 
+         * eiqgen definition can override registered genPackage. This allows the user to select a GenModel if multiple is available
+         */
+        if (genPackage == null){
+        	genPackage = internalFindGenPackage(set, packageNsUri);
+        }
+        return genPackage;
     }
 
     private GenPackage findGenPackage(ResourceSet set, final String packageNsUri, boolean fallbackToPackageRegistry) {
